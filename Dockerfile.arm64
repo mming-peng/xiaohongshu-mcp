@@ -1,5 +1,5 @@
 # Dockerfile for ARM64 architecture
-# This Dockerfile uses Chromium from Ubuntu repository instead of Google Chrome
+# This Dockerfile allows rod to auto-download Chromium on first run
 # because Google Chrome does not provide official Linux ARM64 builds.
 
 # ---- build stage ----
@@ -31,8 +31,8 @@ RUN apt-get update && apt-get install -y ca-certificates wget gnupg && \
     sed -i 's|http://archive.ubuntu.com|https://mirrors.aliyun.com|g' /etc/apt/sources.list && \
     sed -i 's|http://security.ubuntu.com|https://mirrors.aliyun.com|g' /etc/apt/sources.list
 
-# 2. 安装 Chromium + 依赖（无头模式运行 rod）
-# 注意：使用 chromium-browser 替代 Google Chrome，因为后者不支持 ARM64
+# 2. 安装 Chromium 运行所需的依赖库
+# 注意：不安装 chromium，rod 会在首次运行时自动下载 ARM64 版本的 Chromium
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     fonts-liberation \
@@ -70,7 +70,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     lsb-release \
     wget \
     xdg-utils \
-    chromium-browser \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /out/app .
@@ -79,8 +78,8 @@ COPY --from=builder /out/app .
 RUN mkdir -p /app/images && \
     chmod 777 /app/images
 
-# 4. 设置默认 Chromium 路径（rod 会用）
-ENV ROD_BROWSER_BIN=/usr/bin/chromium-browser
+# 4. rod 会自动下载 Chromium 到 /root/.cache/rod
+# 注意：首次启动会自动下载浏览器，大约需要 1-2 分钟
 
 EXPOSE 18060
 

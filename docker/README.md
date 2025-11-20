@@ -14,11 +14,16 @@
 我们提供了预构建的 Docker 镜像，可以直接从 Docker Hub 拉取使用：
 
 ```bash
-# 拉取最新镜像
+# 拉取最新镜像（AMD64 架构）
 docker pull xpzouying/xiaohongshu-mcp
+
+# 拉取 ARM64 架构镜像（Apple Silicon、ARM 服务器）
+docker pull xpzouying/xiaohongshu-mcp:arm64
 ```
 
 Docker Hub 地址：[https://hub.docker.com/r/xpzouying/xiaohongshu-mcp](https://hub.docker.com/r/xpzouying/xiaohongshu-mcp)
+
+> **注意**：ARM64 镜像首次启动时会自动下载 Chromium 浏览器（约 1-2 分钟），后续启动无需重复下载。
 
 ### 1.2 自己构建镜像（可选）
 
@@ -92,4 +97,75 @@ docker compose pull && docker compose up -d
 
 <img width="2614" height="994" alt="image" src="https://github.com/user-attachments/assets/5356914a-3241-4bfd-b6b2-49c1cc5e3394" />
 
+
+## 5. ARM64 架构使用说明
+
+### 5.1 适用场景
+
+ARM64 镜像适用于：
+- Apple Silicon Mac（M1/M2/M3/M4 芯片）
+- ARM 架构的服务器
+
+### 5.2 构建 ARM64 镜像
+
+```bash
+# 在项目根目录运行
+docker build -f Dockerfile.arm64 -t xpzouying/xiaohongshu-mcp:arm64 .
+```
+
+### 5.3 首次登录（保存 Cookies）
+
+由于 Docker 容器运行在无头模式，无法手动输入短信验证码，需要**先在本地登录一次**保存 cookies：
+
+```bash
+# 在项目根目录运行
+go run cmd/login/main.go
+```
+
+这会：
+1. 打开浏览器窗口显示二维码
+2. 使用小红书 APP 扫码
+3. 手动输入短信验证码
+4. 登录成功后自动保存 cookies 到 `cookies.json`
+
+### 5.4 使用 Cookies 运行容器
+
+登录成功后，使用以下命令运行 Docker 容器（会自动使用已保存的登录状态）：
+
+```bash
+docker run -d \
+  --name xiaohongshu-mcp \
+  -p 18060:18060 \
+  -e TZ=Asia/Shanghai \
+  -e COOKIES_PATH=/app/data/cookies.json \
+  -v $(pwd)/cookies.json:/app/data/cookies.json \
+  -v $(pwd)/images:/app/images \
+  xpzouying/xiaohongshu-mcp:arm64
+```
+
+**参数说明**：
+- `-e TZ=Asia/Shanghai`：设置时区为中国时区
+- `-e COOKIES_PATH=/app/data/cookies.json`：指定 cookies 文件路径
+- `-v $(pwd)/cookies.json:/app/data/cookies.json`：挂载本地的 cookies 文件
+- `-v $(pwd)/images:/app/images`：挂载图片目录
+
+### 5.5 验证运行状态
+
+```bash
+# 查看日志
+docker logs -f xiaohongshu-mcp
+
+# 测试连接
+curl -X POST http://localhost:18060/mcp \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"initialize","params":{},"id":1}'
+```
+
+### 5.6 注意事项
+
+1. **首次启动较慢**：ARM64 镜像首次启动时会自动下载 Chromium 浏览器（约 120MB），需要 1-2 分钟。后续启动会使用缓存，速度很快。
+
+2. **Cookies 过期处理**：如果 cookies 过期导致登录失效，重新执行步骤 5.3 本地登录即可。
+
+3. **时区问题**：容器已设置为 `Asia/Shanghai` 时区，但日志输出仍为 UTC 时间（这是标准做法），不影响功能使用。
 
