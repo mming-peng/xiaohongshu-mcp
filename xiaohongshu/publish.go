@@ -76,6 +76,32 @@ func (p *PublishAction) Publish(ctx context.Context, content PublishImageContent
 	return nil
 }
 
+func (p *PublishAction) SaveDraft(ctx context.Context, content PublishImageContent) error {
+	if len(content.ImagePaths) == 0 {
+		return errors.New("图片不能为空")
+	}
+
+	page := p.page.Context(ctx)
+
+	if err := uploadImages(page, content.ImagePaths); err != nil {
+		return errors.Wrap(err, "小红书上传图片失败")
+	}
+
+	tags := content.Tags
+	if len(tags) >= 10 {
+		logrus.Warnf("标签数量超过10，截取前10个标签")
+		tags = tags[:10]
+	}
+
+	logrus.Infof("保存草稿: title=%s, images=%v, tags=%v", content.Title, len(content.ImagePaths), tags)
+
+	if err := submitSaveDraft(page, content.Title, content.Content, tags); err != nil {
+		return errors.Wrap(err, "小红书保存草稿失败")
+	}
+
+	return nil
+}
+
 func removePopCover(page *rod.Page) {
 
 	// 先移除弹窗封面
@@ -237,6 +263,63 @@ func waitForUploadComplete(page *rod.Page, expectedCount int) error {
 	}
 
 	return errors.New("上传超时，请检查网络连接和图片大小")
+}
+
+func submitSaveDraft(page *rod.Page, title, content string, tags []string) error {
+
+	titleElem := page.MustElement("div.d-input input")
+	titleElem.MustInput(title)
+
+	time.Sleep(1 * time.Second)
+
+	if contentElem, ok := getContentElement(page); ok {
+		contentElem.MustInput(content)
+
+		inputTags(contentElem, tags)
+
+	} else {
+		return errors.New("没有找到内容输入框")
+	}
+
+	time.Sleep(1 * time.Second)
+
+	// 查找并点击"存草稿"按钮
+	// 策略：查找包含文本"存草稿"的按钮元素
+	buttons, err := page.Elements("div.submit div.d-button-content")
+	if err != nil {
+		return errors.Wrap(err, "查找提交按钮失败")
+	}
+
+	var draftButton *rod.Element
+	for _, btn := range buttons {
+		text, err := btn.Text()
+		if err != nil {
+			continue
+		}
+		if strings.Contains(text, "暂存离开") {
+			draftButton = btn
+			break
+		}
+	}
+
+	if draftButton == nil {
+		// 尝试使用 XPath 查找包含文本的按钮
+		// XPath: //div[contains(text(), "暂存离开")]
+		elems, err := page.ElementsX(`//div[contains(text(), "暂存离开")]`)
+		if err == nil && len(elems) > 0 {
+			draftButton = elems[0]
+		}
+	}
+
+	if draftButton == nil {
+		return errors.New("未找到'暂存离开'按钮")
+	}
+
+	draftButton.MustClick()
+
+	time.Sleep(3 * time.Second)
+
+	return nil
 }
 
 func submitPublish(page *rod.Page, title, content string, tags []string) error {

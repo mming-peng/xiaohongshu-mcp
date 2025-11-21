@@ -221,7 +221,13 @@ graph TD
     
     WaitResult -->|Success| Finish[Return Success]
     WaitResult -->|Fail| Error
+    WaitResult -->|Fail| Error
 ```
+
+#### 草稿箱保存 (`publish.go`)
+*   **复用流程**: 复用发布内容的上传和填写流程。
+*   **差异点**: 最后一步查找并点击 "暂存离开" 按钮，而不是 "发布" 按钮。
+*   **按钮查找**: 使用文本匹配 ("暂存离开") 来定位按钮，提高了对页面结构变化的适应性。
 
 #### 交互操作 (`like_favorite.go`, `comment_feed.go`)
 *   **选择器**: 定义交互按钮（点赞、收藏）的 CSS 选择器。

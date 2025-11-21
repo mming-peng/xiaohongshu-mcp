@@ -100,6 +100,26 @@ func (s *AppServer) publishHandler(c *gin.Context) {
 	respondSuccess(c, result, "发布成功")
 }
 
+// saveToDraftHandler 保存草稿
+func (s *AppServer) saveToDraftHandler(c *gin.Context) {
+	var req PublishRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, http.StatusBadRequest, "INVALID_REQUEST",
+			"请求参数错误", err.Error())
+		return
+	}
+
+	// 执行保存草稿
+	result, err := s.xiaohongshuService.SaveToDraft(c.Request.Context(), &req)
+	if err != nil {
+		respondError(c, http.StatusInternalServerError, "SAVE_DRAFT_FAILED",
+			"保存草稿失败", err.Error())
+		return
+	}
+
+	respondSuccess(c, result, "草稿保存成功")
+}
+
 // publishVideoHandler 发布视频内容
 func (s *AppServer) publishVideoHandler(c *gin.Context) {
 	var req PublishVideoRequest

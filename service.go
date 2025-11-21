@@ -203,6 +203,59 @@ func (s *XiaohongshuService) PublishContent(ctx context.Context, req *PublishReq
 	return response, nil
 }
 
+// SaveToDraft 保存草稿
+func (s *XiaohongshuService) SaveToDraft(ctx context.Context, req *PublishRequest) (*PublishResponse, error) {
+	// 验证标题长度
+	if titleWidth := runewidth.StringWidth(req.Title); titleWidth > 40 {
+		return nil, fmt.Errorf("标题长度超过限制")
+	}
+
+	// 处理图片
+	imagePaths, err := s.processImages(req.Images)
+	if err != nil {
+		return nil, err
+	}
+
+	// 构建内容
+	content := xiaohongshu.PublishImageContent{
+		Title:      req.Title,
+		Content:    req.Content,
+		Tags:       req.Tags,
+		ImagePaths: imagePaths,
+	}
+
+	// 执行保存草稿
+	if err := s.saveToDraft(ctx, content); err != nil {
+		logrus.Errorf("保存草稿失败: title=%s %v", content.Title, err)
+		return nil, err
+	}
+
+	response := &PublishResponse{
+		Title:   req.Title,
+		Content: req.Content,
+		Images:  len(imagePaths),
+		Status:  "草稿保存成功",
+	}
+
+	return response, nil
+}
+
+// saveToDraft 执行保存草稿
+func (s *XiaohongshuService) saveToDraft(ctx context.Context, content xiaohongshu.PublishImageContent) error {
+	b := newBrowser()
+	defer b.Close()
+
+	page := b.NewPage()
+	defer page.Close()
+
+	action, err := xiaohongshu.NewPublishImageAction(page)
+	if err != nil {
+		return err
+	}
+
+	return action.SaveDraft(ctx, content)
+}
+
 // processImages 处理图片列表，支持URL下载和本地路径
 func (s *XiaohongshuService) processImages(images []string) ([]string, error) {
 	processor := downloader.NewImageProcessor()

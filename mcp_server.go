@@ -184,6 +184,25 @@ func registerTools(server *mcp.Server, appServer *AppServer) {
 		}),
 	)
 
+	// 工具 4.5: 保存草稿
+	mcp.AddTool(server,
+		&mcp.Tool{
+			Name:        "save_to_draft",
+			Description: "保存小红书图文内容到草稿箱（不发布）",
+		},
+		withPanicRecovery("save_to_draft", func(ctx context.Context, req *mcp.CallToolRequest, args PublishContentArgs) (*mcp.CallToolResult, any, error) {
+			// 转换参数格式到现有的 handler
+			argsMap := map[string]interface{}{
+				"title":   args.Title,
+				"content": args.Content,
+				"images":  convertStringsToInterfaces(args.Images),
+				"tags":    convertStringsToInterfaces(args.Tags),
+			}
+			result := appServer.handleSaveToDraft(ctx, argsMap)
+			return convertToMCPResult(result), nil, nil
+		}),
+	)
+
 	// 工具 5: 获取Feed列表
 	mcp.AddTool(server,
 		&mcp.Tool{

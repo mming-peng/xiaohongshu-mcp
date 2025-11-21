@@ -201,6 +201,49 @@ Content-Type: application/json
 - 视频处理时间较长，请耐心等待
 - 建议视频文件大小不超过 1GB
 
+#### 3.3 保存草稿
+
+将图文内容保存到小红书草稿箱（不发布）。
+
+**请求**
+```
+POST /api/v1/draft
+Content-Type: application/json
+```
+
+**请求体**
+```json
+{
+  "title": "草稿标题",
+  "content": "草稿内容",
+  "images": [
+    "http://example.com/image1.jpg",
+    "http://example.com/image2.jpg"
+  ],
+  "tags": ["标签1", "标签2"]
+}
+```
+
+**请求参数说明:**
+- `title` (string, required): 草稿标题
+- `content` (string, required): 草稿内容
+- `images` (array, required): 图片URL数组，至少包含一张图片
+- `tags` (array, optional): 标签数组
+
+**响应**
+```json
+{
+  "success": true,
+  "data": {
+    "title": "草稿标题",
+    "content": "草稿内容",
+    "images": 2,
+    "status": "草稿保存成功"
+  },
+  "message": "草稿保存成功"
+}
+```
+
 ---
 
 ### 4. Feed 管理
@@ -358,9 +401,13 @@ Content-Type: application/json
 
 ---
 
-### 5. 用户信息
+---
 
-获取用户主页信息。
+### 6. 用户信息
+
+#### 6.1 获取用户主页
+
+获取指定用户的主页信息。
 
 **请求**
 ```
@@ -417,9 +464,30 @@ Content-Type: application/json
 }
 ```
 
+#### 6.2 获取我的主页
+
+获取当前登录用户的主页信息。
+
+**请求**
+```
+GET /api/v1/user/me
+```
+
+**响应**
+*(响应结构同 6.1)*
+```json
+{
+  "success": true,
+  "data": {
+    "data": { ... }
+  },
+  "message": "获取我的主页成功"
+}
+```
+
 ---
 
-### 6. 评论管理
+### 7. 评论管理
 
 #### 6.1 发表评论
 
@@ -460,7 +528,21 @@ Content-Type: application/json
 
 ---
 
-## 注意事项
+### 8. 互动管理
+
+#### 8.1 点赞/取消点赞
+
+**MCP 工具**: `like_feed`
+
+*(注：目前仅提供 MCP 工具支持，暂无直接 HTTP 接口，或需通过 MCP 协议调用)*
+
+#### 8.2 收藏/取消收藏
+
+**MCP 工具**: `favorite_feed`
+
+*(注：目前仅提供 MCP 工具支持，暂无直接 HTTP 接口，或需通过 MCP 协议调用)*
+
+---
 
 1. **认证**: 部分 API 需要有效的登录状态，建议先调用登录状态检查接口确认登录。
 
@@ -483,3 +565,23 @@ Content-Type: application/json
 - **用途**: 可以通过MCP客户端调用相同的功能
 
 更多MCP协议相关信息请参考 [Model Context Protocol 官方文档](https://modelcontextprotocol.io/)。
+
+## MCP 工具列表
+
+本服务提供以下 MCP 工具，供 AI 智能体调用：
+
+| 工具名称 | 描述 | 参数 |
+| :--- | :--- | :--- |
+| `check_login_status` | 检查小红书登录状态 | 无 |
+| `get_login_qrcode` | 获取登录二维码 | 无 |
+| `delete_cookies` | 删除 cookies，重置登录状态 | 无 |
+| `publish_content` | 发布图文内容 | `title`, `content`, `images`, `tags` |
+| `publish_with_video` | 发布视频内容（仅本地文件） | `title`, `content`, `video`, `tags` |
+| `save_to_draft` | 保存图文内容到草稿箱 | `title`, `content`, `images`, `tags` |
+| `list_feeds` | 获取首页 Feeds 列表 | 无 |
+| `search_feeds` | 搜索内容 | `keyword`, `filters` |
+| `get_feed_detail` | 获取笔记详情 | `feed_id`, `xsec_token` |
+| `user_profile` | 获取用户主页 | `user_id`, `xsec_token` |
+| `post_comment_to_feed` | 发表评论 | `feed_id`, `xsec_token`, `content` |
+| `like_feed` | 点赞/取消点赞 | `feed_id`, `xsec_token`, `unlike` |
+| `favorite_feed` | 收藏/取消收藏 | `feed_id`, `xsec_token`, `unfavorite` |
