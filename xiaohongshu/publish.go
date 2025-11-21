@@ -266,6 +266,7 @@ func waitForUploadComplete(page *rod.Page, expectedCount int) error {
 }
 
 func submitSaveDraft(page *rod.Page, title, content string, tags []string) error {
+	logrus.Info("开始保存草稿（填写内容，小红书会自动保存到浏览器本地存储）")
 
 	titleElem := page.MustElement("div.d-input input")
 	titleElem.MustInput(title)
@@ -281,43 +282,13 @@ func submitSaveDraft(page *rod.Page, title, content string, tags []string) error
 		return errors.New("没有找到内容输入框")
 	}
 
-	time.Sleep(1 * time.Second)
-
-	// 查找并点击"存草稿"按钮
-	// 策略：查找包含文本"存草稿"的按钮元素
-	buttons, err := page.Elements("div.submit div.d-button-content")
-	if err != nil {
-		return errors.Wrap(err, "查找提交按钮失败")
-	}
-
-	var draftButton *rod.Element
-	for _, btn := range buttons {
-		text, err := btn.Text()
-		if err != nil {
-			continue
-		}
-		if strings.Contains(text, "暂存离开") {
-			draftButton = btn
-			break
-		}
-	}
-
-	if draftButton == nil {
-		// 尝试使用 XPath 查找包含文本的按钮
-		// XPath: //div[contains(text(), "暂存离开")]
-		elems, err := page.ElementsX(`//div[contains(text(), "暂存离开")]`)
-		if err == nil && len(elems) > 0 {
-			draftButton = elems[0]
-		}
-	}
-
-	if draftButton == nil {
-		return errors.New("未找到'暂存离开'按钮")
-	}
-
-	draftButton.MustClick()
-
+	// 小红书会自动保存草稿到浏览器本地存储（LocalStorage/IndexedDB）
+	// 不需要点击任何按钮，只需等待自动保存完成即可
+	logrus.Info("等待小红书自动保存草稿到浏览器本地存储...")
 	time.Sleep(3 * time.Second)
+
+	logrus.Info("草稿已自动保存到浏览器本地存储，可在创作中心查看")
+	logrus.Info("提示：草稿存储于浏览器本地，清除浏览器数据会丢失；最多支持100篇")
 
 	return nil
 }

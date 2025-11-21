@@ -42,3 +42,9 @@ test_*.sh
 
 # Cookies files (contain sensitive login information)
 cookies.json
+
+# Local drafts directory
+.drafts/
+
+# Browser user data directory (contains LocalStorage, IndexedDB, etc.)
+.browser-data/

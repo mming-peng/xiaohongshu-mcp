@@ -638,3 +638,153 @@ func (s *AppServer) handleOpenHomepage(ctx context.Context) (*mcp.CallToolResult
 		},
 	}, nil, nil
 }
+
+// handleListDrafts 处理列出草稿列表
+func (s *AppServer) handleListDrafts(ctx context.Context) *MCPToolResult {
+	logrus.Info("MCP: 列出本地草稿")
+
+	drafts, err := s.xiaohongshuService.ListDrafts(ctx)
+	if err != nil {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "获取草稿列表失败: " + err.Error(),
+			}},
+			IsError: true,
+		}
+	}
+
+	// 格式化输出
+	jsonData, err := json.MarshalIndent(drafts, "", "  ")
+	if err != nil {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: fmt.Sprintf("获取草稿列表成功，但序列化失败: %v", err),
+			}},
+			IsError: true,
+		}
+	}
+
+	resultText := fmt.Sprintf("共有 %d 个本地草稿:\n\n%s", len(drafts), string(jsonData))
+	return &MCPToolResult{
+		Content: []MCPContent{{
+			Type: "text",
+			Text: resultText,
+		}},
+	}
+}
+
+// handleGetDraft 处理获取草稿详情
+func (s *AppServer) handleGetDraft(ctx context.Context, args map[string]interface{}) *MCPToolResult {
+	logrus.Info("MCP: 获取草稿详情")
+
+	draftID, ok := args["draft_id"].(string)
+	if !ok || draftID == "" {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "获取草稿失败: 缺少draft_id参数",
+			}},
+			IsError: true,
+		}
+	}
+
+	draft, err := s.xiaohongshuService.GetDraft(ctx, draftID)
+	if err != nil {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "获取草稿失败: " + err.Error(),
+			}},
+			IsError: true,
+		}
+	}
+
+	// 格式化输出
+	jsonData, err := json.MarshalIndent(draft, "", "  ")
+	if err != nil {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: fmt.Sprintf("获取草稿成功，但序列化失败: %v", err),
+			}},
+			IsError: true,
+		}
+	}
+
+	return &MCPToolResult{
+		Content: []MCPContent{{
+			Type: "text",
+			Text: string(jsonData),
+		}},
+	}
+}
+
+// handleDeleteDraft 处理删除草稿
+func (s *AppServer) handleDeleteDraft(ctx context.Context, args map[string]interface{}) *MCPToolResult {
+	logrus.Info("MCP: 删除草稿")
+
+	draftID, ok := args["draft_id"].(string)
+	if !ok || draftID == "" {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "删除草稿失败: 缺少draft_id参数",
+			}},
+			IsError: true,
+		}
+	}
+
+	if err := s.xiaohongshuService.DeleteDraft(ctx, draftID); err != nil {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "删除草稿失败: " + err.Error(),
+			}},
+			IsError: true,
+		}
+	}
+
+	return &MCPToolResult{
+		Content: []MCPContent{{
+			Type: "text",
+			Text: fmt.Sprintf("草稿已成功删除: %s", draftID),
+		}},
+	}
+}
+
+// handlePublishFromDraft 处理从草稿发布
+func (s *AppServer) handlePublishFromDraft(ctx context.Context, args map[string]interface{}) *MCPToolResult {
+	logrus.Info("MCP: 从草稿发布")
+
+	draftID, ok := args["draft_id"].(string)
+	if !ok || draftID == "" {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "从草稿发布失败: 缺少draft_id参数",
+			}},
+			IsError: true,
+		}
+	}
+
+	result, err := s.xiaohongshuService.PublishFromDraft(ctx, draftID)
+	if err != nil {
+		return &MCPToolResult{
+			Content: []MCPContent{{
+				Type: "text",
+				Text: "从草稿发布失败: " + err.Error(),
+			}},
+			IsError: true,
+		}
+	}
+
+	resultText := fmt.Sprintf("从草稿发布成功: %+v", result)
+	return &MCPToolResult{
+		Content: []MCPContent{{
+			Type: "text",
+			Text: resultText,
+		}},
+	}
+}

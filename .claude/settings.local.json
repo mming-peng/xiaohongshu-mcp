@@ -27,7 +27,11 @@
       "Bash(tar:*)",
       "mcp__playwright__browser_type",
       "mcp__playwright__browser_close",
-      "Bash(git remote:*)"
+      "Bash(git remote:*)",
+      "mcp__serena__find_symbol",
+      "mcp__serena__activate_project",
+      "Bash(git checkout:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
