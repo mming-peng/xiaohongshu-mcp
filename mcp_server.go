@@ -328,7 +328,18 @@ func registerTools(server *mcp.Server, appServer *AppServer) {
 		}),
 	)
 
-	logrus.Infof("Registered %d MCP tools", 12)
+	// 工具 13: 打开首页
+	mcp.AddTool(server,
+		&mcp.Tool{
+			Name:        "open_homepage",
+			Description: "打开小红书首页（不关闭浏览器）",
+		},
+		withPanicRecovery("open_homepage", func(ctx context.Context, req *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
+			return appServer.handleOpenHomepage(ctx)
+		}),
+	)
+
+	logrus.Infof("Registered %d MCP tools", 14)
 }
 
 // convertToMCPResult 将自定义的 MCPToolResult 转换为官方 SDK 的格式

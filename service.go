@@ -559,3 +559,28 @@ func (s *XiaohongshuService) GetMyProfile(ctx context.Context) (*UserProfileResp
 
 	return response, nil
 }
+
+// OpenHomepage 打开小红书首页
+func (s *XiaohongshuService) OpenHomepage(ctx context.Context) error {
+	// 强制使用非无头模式，因为用户想要查看页面
+	b := browser.NewBrowser(false, browser.WithBinPath(configs.GetBinPath()))
+	// 注意：这里故意不调用 defer b.Close()，以便保持浏览器开启
+
+	page := b.NewPage()
+	// 注意：这里故意不调用 defer page.Close()
+
+	logrus.Info("正在打开小红书首页...")
+	if err := page.Navigate("https://www.xiaohongshu.com"); err != nil {
+		// 如果导航失败，尝试关闭浏览器以避免残留
+		b.Close()
+		return fmt.Errorf("导航失败: %w", err)
+	}
+
+	// 等待页面加载完成
+	if err := page.WaitLoad(); err != nil {
+		return fmt.Errorf("等待页面加载失败: %w", err)
+	}
+
+	logrus.Info("首页已打开")
+	return nil
+}

@@ -10,6 +10,8 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/xpzouying/xiaohongshu-mcp/cookies"
 	"github.com/xpzouying/xiaohongshu-mcp/xiaohongshu"
+
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 // MCP 工具处理函数
@@ -617,4 +619,22 @@ func (s *AppServer) handlePostComment(ctx context.Context, args map[string]inter
 			Text: resultText,
 		}},
 	}
+}
+
+// handleOpenHomepage 处理打开首页请求
+func (s *AppServer) handleOpenHomepage(ctx context.Context) (*mcp.CallToolResult, any, error) {
+	if err := s.xiaohongshuService.OpenHomepage(ctx); err != nil {
+		return &mcp.CallToolResult{
+			Content: []mcp.Content{
+				&mcp.TextContent{Text: fmt.Sprintf("打开首页失败: %v", err)},
+			},
+			IsError: true,
+		}, nil, nil
+	}
+
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			&mcp.TextContent{Text: "已成功打开小红书首页"},
+		},
+	}, nil, nil
 }
