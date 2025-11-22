@@ -561,10 +561,16 @@ func (s *XiaohongshuService) GetMyProfile(ctx context.Context) (*UserProfileResp
 }
 
 // OpenHomepage 打开小红书首页
-func (s *XiaohongshuService) OpenHomepage(ctx context.Context) error {
+// tracker: 可选的浏览器追踪回调函数，用于在服务关闭时清理浏览器
+func (s *XiaohongshuService) OpenHomepage(ctx context.Context, tracker func(*browser.Browser)) error {
 	// 强制使用非无头模式，因为用户想要查看页面
 	b := browser.NewBrowser(false, browser.WithBinPath(configs.GetBinPath()))
 	// 注意：这里故意不调用 defer b.Close()，以便保持浏览器开启
+
+	// 如果提供了追踪器，注册这个浏览器实例
+	if tracker != nil {
+		tracker(b)
+	}
 
 	page := b.NewPage()
 	// 注意：这里故意不调用 defer page.Close()

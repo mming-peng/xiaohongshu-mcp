@@ -3,6 +3,7 @@ package browser
 import (
 	"encoding/json"
 	"path/filepath"
+	"time"
 
 	"github.com/go-rod/rod"
 	"github.com/go-rod/rod/lib/launcher"
@@ -46,6 +47,35 @@ func (b *Browser) Close() {
 	// 只释放当前连接，浏览器继续运行以供后续复用
 	// 注意：不调用 browser.MustClose() 和 launcher.Cleanup()
 	logrus.Debug("释放浏览器连接（浏览器实例继续运行以供复用）")
+}
+
+// ForceClose 强制关闭浏览器进程（用于彻底清理）
+func (b *Browser) ForceClose() {
+	logrus.Debug("正在强制关闭浏览器进程...")
+
+	// 使用 channel 和 goroutine 实现超时控制
+	done := make(chan bool, 1)
+
+	go func() {
+		// 关闭浏览器实例
+		if b.browser != nil {
+			_ = b.browser.Close()
+		}
+
+		// 清理 launcher（这会终止浏览器进程）
+		if b.launcher != nil {
+			b.launcher.Cleanup()
+		}
+		done <- true
+	}()
+
+	// 等待关闭完成或超时（2秒）
+	select {
+	case <-done:
+		logrus.Debug("浏览器进程已正常关闭")
+	case <-time.After(2 * time.Second):
+		logrus.Warn("关闭浏览器超时，可能需要手动终止进程")
+	}
 }
 
 func NewBrowser(headless bool, options ...Option) *Browser {

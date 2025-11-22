@@ -623,7 +623,8 @@ func (s *AppServer) handlePostComment(ctx context.Context, args map[string]inter
 
 // handleOpenHomepage 处理打开首页请求
 func (s *AppServer) handleOpenHomepage(ctx context.Context) (*mcp.CallToolResult, any, error) {
-	if err := s.xiaohongshuService.OpenHomepage(ctx); err != nil {
+	// 传递浏览器追踪回调函数
+	if err := s.xiaohongshuService.OpenHomepage(ctx, s.trackBrowser); err != nil {
 		return &mcp.CallToolResult{
 			Content: []mcp.Content{
 				&mcp.TextContent{Text: fmt.Sprintf("打开首页失败: %v", err)},
