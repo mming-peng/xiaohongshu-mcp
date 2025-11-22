@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/go-rod/rod"
@@ -14,29 +13,17 @@ import (
 	"github.com/xpzouying/xiaohongshu-mcp/browser"
 	"github.com/xpzouying/xiaohongshu-mcp/configs"
 	"github.com/xpzouying/xiaohongshu-mcp/cookies"
-	"github.com/xpzouying/xiaohongshu-mcp/draft"
 	"github.com/xpzouying/xiaohongshu-mcp/pkg/downloader"
 	"github.com/xpzouying/xiaohongshu-mcp/xiaohongshu"
 )
 
 // XiaohongshuService 小红书业务服务
 type XiaohongshuService struct {
-	draftManager *draft.Manager
 }
 
 // NewXiaohongshuService 创建小红书服务实例
 func NewXiaohongshuService() *XiaohongshuService {
-	// 初始化草稿管理器
-	draftsDir := filepath.Join(".", ".drafts")
-	draftMgr, err := draft.NewManager(draftsDir)
-	if err != nil {
-		logrus.Warnf("初始化草稿管理器失败: %v", err)
-		draftMgr = nil
-	}
-
-	return &XiaohongshuService{
-		draftManager: draftMgr,
-	}
+	return &XiaohongshuService{}
 }
 
 // PublishRequest 发布请求
@@ -216,7 +203,7 @@ func (s *XiaohongshuService) PublishContent(ctx context.Context, req *PublishReq
 	return response, nil
 }
 
-// SaveToDraft 保存草稿（同时保存到小红书和本地）
+// SaveToDraft 保存草稿到小红书
 func (s *XiaohongshuService) SaveToDraft(ctx context.Context, req *PublishRequest) (*PublishResponse, error) {
 	// 验证标题长度
 	if titleWidth := runewidth.StringWidth(req.Title); titleWidth > 40 {
@@ -237,43 +224,17 @@ func (s *XiaohongshuService) SaveToDraft(ctx context.Context, req *PublishReques
 		ImagePaths: imagePaths,
 	}
 
-	// 先保存到本地
-	var draftID string
-	if s.draftManager != nil {
-		localDraft := &draft.Draft{
-			Title:      req.Title,
-			Content:    req.Content,
-			Images:     imagePaths,
-			Tags:       req.Tags,
-			SavedToXHS: false,
-		}
-		if err := s.draftManager.Save(localDraft); err != nil {
-			logrus.Warnf("保存草稿到本地失败: %v", err)
-		} else {
-			draftID = localDraft.ID
-			logrus.Infof("草稿已保存到本地，ID: %s", draftID)
-		}
-	}
-
 	// 执行保存到小红书
 	if err := s.saveToDraft(ctx, content); err != nil {
 		logrus.Errorf("保存草稿到小红书失败: title=%s %v", content.Title, err)
 		return nil, err
 	}
 
-	// 更新本地草稿状态
-	if s.draftManager != nil && draftID != "" {
-		if localDraft, err := s.draftManager.Get(draftID); err == nil {
-			localDraft.SavedToXHS = true
-			s.draftManager.Save(localDraft)
-		}
-	}
-
 	response := &PublishResponse{
 		Title:   req.Title,
 		Content: req.Content,
 		Images:  len(imagePaths),
-		Status:  "草稿保存成功（已同时保存到本地和小红书）",
+		Status:  "草稿保存成功",
 	}
 
 	return response, nil
@@ -622,74 +583,4 @@ func (s *XiaohongshuService) OpenHomepage(ctx context.Context) error {
 
 	logrus.Info("首页已打开")
 	return nil
-}
-
-// ListDrafts 列出所有本地草稿
-func (s *XiaohongshuService) ListDrafts(ctx context.Context) ([]*draft.Draft, error) {
-	if s.draftManager == nil {
-		return nil, fmt.Errorf("草稿管理器未初始化")
-	}
-
-	drafts, err := s.draftManager.List()
-	if err != nil {
-		return nil, fmt.Errorf("获取草稿列表失败: %w", err)
-	}
-
-	return drafts, nil
-}
-
-// GetDraft 获取指定ID的草稿
-func (s *XiaohongshuService) GetDraft(ctx context.Context, draftID string) (*draft.Draft, error) {
-	if s.draftManager == nil {
-		return nil, fmt.Errorf("草稿管理器未初始化")
-	}
-
-	d, err := s.draftManager.Get(draftID)
-	if err != nil {
-		return nil, fmt.Errorf("获取草稿失败: %w", err)
-	}
-
-	return d, nil
-}
-
-// DeleteDraft 删除指定ID的草稿
-func (s *XiaohongshuService) DeleteDraft(ctx context.Context, draftID string) error {
-	if s.draftManager == nil {
-		return fmt.Errorf("草稿管理器未初始化")
-	}
-
-	if err := s.draftManager.Delete(draftID); err != nil {
-		return fmt.Errorf("删除草稿失败: %w", err)
-	}
-
-	return nil
-}
-
-// PublishFromDraft 从本地草稿发布内容
-func (s *XiaohongshuService) PublishFromDraft(ctx context.Context, draftID string) (*PublishResponse, error) {
-	if s.draftManager == nil {
-		return nil, fmt.Errorf("草稿管理器未初始化")
-	}
-
-	// 获取草稿
-	d, err := s.draftManager.Get(draftID)
-	if err != nil {
-		return nil, fmt.Errorf("获取草稿失败: %w", err)
-	}
-
-	// 构建发布请求
-	req := &PublishRequest{
-		Title:   d.Title,
-		Content: d.Content,
-		Images:  d.Images,
-		Tags:    d.Tags,
-	}
-
-	// 执行发布
-	response, err := s.PublishContent(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
 }

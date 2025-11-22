@@ -76,10 +76,7 @@ type FavoriteFeedArgs struct {
 	Unfavorite bool   `json:"unfavorite,omitempty" jsonschema:"是否取消收藏，true为取消收藏，false或未设置则为收藏"`
 }
 
-// DraftIDArgs 草稿ID参数
-type DraftIDArgs struct {
-	DraftID string `json:"draft_id" jsonschema:"本地草稿ID，从list_drafts获取"`
-}
+
 
 // InitMCPServer 初始化 MCP Server
 func InitMCPServer(appServer *AppServer) *mcp.Server {
@@ -344,64 +341,9 @@ func registerTools(server *mcp.Server, appServer *AppServer) {
 		}),
 	)
 
-	// 工具 14: 列出本地草稿
-	mcp.AddTool(server,
-		&mcp.Tool{
-			Name:        "list_drafts",
-			Description: "列出所有本地保存的草稿",
-		},
-		withPanicRecovery("list_drafts", func(ctx context.Context, req *mcp.CallToolRequest, _ any) (*mcp.CallToolResult, any, error) {
-			result := appServer.handleListDrafts(ctx)
-			return convertToMCPResult(result), nil, nil
-		}),
-	)
 
-	// 工具 15: 获取草稿详情
-	mcp.AddTool(server,
-		&mcp.Tool{
-			Name:        "get_draft",
-			Description: "获取指定ID的草稿详情",
-		},
-		withPanicRecovery("get_draft", func(ctx context.Context, req *mcp.CallToolRequest, args DraftIDArgs) (*mcp.CallToolResult, any, error) {
-			argsMap := map[string]interface{}{
-				"draft_id": args.DraftID,
-			}
-			result := appServer.handleGetDraft(ctx, argsMap)
-			return convertToMCPResult(result), nil, nil
-		}),
-	)
 
-	// 工具 16: 删除草稿
-	mcp.AddTool(server,
-		&mcp.Tool{
-			Name:        "delete_draft",
-			Description: "删除指定ID的本地草稿",
-		},
-		withPanicRecovery("delete_draft", func(ctx context.Context, req *mcp.CallToolRequest, args DraftIDArgs) (*mcp.CallToolResult, any, error) {
-			argsMap := map[string]interface{}{
-				"draft_id": args.DraftID,
-			}
-			result := appServer.handleDeleteDraft(ctx, argsMap)
-			return convertToMCPResult(result), nil, nil
-		}),
-	)
-
-	// 工具 17: 从草稿发布
-	mcp.AddTool(server,
-		&mcp.Tool{
-			Name:        "publish_from_draft",
-			Description: "从本地草稿发布内容到小红书",
-		},
-		withPanicRecovery("publish_from_draft", func(ctx context.Context, req *mcp.CallToolRequest, args DraftIDArgs) (*mcp.CallToolResult, any, error) {
-			argsMap := map[string]interface{}{
-				"draft_id": args.DraftID,
-			}
-			result := appServer.handlePublishFromDraft(ctx, argsMap)
-			return convertToMCPResult(result), nil, nil
-		}),
-	)
-
-	logrus.Infof("Registered %d MCP tools", 17)
+	logrus.Infof("Registered %d MCP tools", 13)
 }
 
 // convertToMCPResult 将自定义的 MCPToolResult 转换为官方 SDK 的格式

@@ -203,7 +203,7 @@ Content-Type: application/json
 
 #### 3.3 保存草稿
 
-将图文内容保存到小红书草稿箱（不发布）并同步到本地备份。
+将图文内容保存到小红书草稿箱（不发布）。
 
 **请求**
 ```
@@ -238,7 +238,7 @@ Content-Type: application/json
     "title": "草稿标题",
     "content": "草稿内容",
     "images": 2,
-    "status": "草稿保存成功（已同时保存到本地和小红书）"
+    "status": "草稿保存成功"
   },
   "message": "草稿保存成功"
 }
@@ -246,74 +246,14 @@ Content-Type: application/json
 
 **草稿持久化说明:**
 - **小红书平台**: 草稿自动保存到浏览器本地存储（`.browser-data/` 目录），可在创作中心查看和修改
-- **本地备份**: 同时保存到 `.drafts/` 目录，防止数据丢失，支持跨设备同步
-- **数量限制**: 小红书平台限制最多 100 篇草稿，本地备份无限制
+- **数量限制**: 小红书平台限制最多 100 篇草稿
 - **持久化**: 使用固定的浏览器用户数据目录，草稿不会因程序重启而丢失
 
 ---
 
-### 4. 草稿管理
+### 4. Feed 管理
 
-本地草稿管理功能，提供草稿的列表、查看、删除和发布能力。
-
-> **注意**: 草稿管理功能目前仅通过 MCP 工具提供，暂无 HTTP REST API。
-
-#### 4.1 列出本地草稿
-
-**MCP 工具**: `list_drafts`
-
-列出所有本地保存的草稿。
-
-**响应示例**
-```json
-{
-  "drafts": [
-    {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "title": "草稿标题",
-      "content": "草稿内容",
-      "images": ["/path/to/image1.jpg", "/path/to/image2.jpg"],
-      "tags": ["标签1", "标签2"],
-      "created_at": "2025-01-20T10:30:00Z",
-      "updated_at": "2025-01-20T11:00:00Z",
-      "saved_to_xhs": true
-    }
-  ]
-}
-```
-
-#### 4.2 获取草稿详情
-
-**MCP 工具**: `get_draft`
-
-获取指定 ID 的草稿详细信息。
-
-**参数**:
-- `draft_id` (string, required): 草稿 ID
-
-#### 4.3 删除草稿
-
-**MCP 工具**: `delete_draft`
-
-删除指定 ID 的本地草稿。
-
-**参数**:
-- `draft_id` (string, required): 草稿 ID
-
-#### 4.4 从草稿发布
-
-**MCP 工具**: `publish_from_draft`
-
-从本地草稿恢复并发布到小红书。
-
-**参数**:
-- `draft_id` (string, required): 草稿 ID
-
----
-
-### 5. Feed 管理
-
-#### 5.1 获取 Feeds 列表
+#### 4.1 获取 Feeds 列表
 
 获取用户的 Feeds 列表。
 
@@ -357,7 +297,7 @@ GET /api/v1/feeds/list
 }
 ```
 
-#### 5.2 搜索 Feeds
+#### 4.2 搜索 Feeds
 
 根据关键词搜索 Feeds。
 
@@ -399,7 +339,7 @@ GET /api/v1/feeds/search?keyword=搜索关键词
 }
 ```
 
-#### 5.3 获取 Feed 详情
+#### 4.3 获取 Feed 详情
 
 获取指定 Feed 的详细信息。
 
@@ -466,11 +406,9 @@ Content-Type: application/json
 
 ---
 
----
+### 5. 用户信息
 
-### 6. 用户信息
-
-#### 6.1 获取用户主页
+#### 5.1 获取用户主页
 
 获取指定用户的主页信息。
 
@@ -529,7 +467,7 @@ Content-Type: application/json
 }
 ```
 
-#### 6.2 获取我的主页
+#### 5.2 获取我的主页
 
 获取当前登录用户的主页信息。
 
@@ -552,9 +490,9 @@ GET /api/v1/user/me
 
 ---
 
-### 7. 评论管理
+### 6. 评论管理
 
-#### 7.1 发表评论
+#### 6.1 发表评论
 
 对指定 Feed 发表评论。
 
@@ -593,15 +531,15 @@ Content-Type: application/json
 
 ---
 
-### 8. 互动管理
+### 7. 互动管理
 
-#### 8.1 点赞/取消点赞
+#### 7.1 点赞/取消点赞
 
 **MCP 工具**: `like_feed`
 
 *(注：目前仅提供 MCP 工具支持，暂无直接 HTTP 接口，或需通过 MCP 协议调用)*
 
-#### 8.2 收藏/取消收藏
+#### 7.2 收藏/取消收藏
 
 **MCP 工具**: `favorite_feed`
 
@@ -642,11 +580,7 @@ Content-Type: application/json
 | `delete_cookies` | 删除 cookies，重置登录状态 | 无 |
 | `publish_content` | 发布图文内容 | `title`, `content`, `images`, `tags` |
 | `publish_with_video` | 发布视频内容（仅本地文件） | `title`, `content`, `video`, `tags` |
-| `save_to_draft` | 保存图文内容到草稿箱（同步到本地和小红书） | `title`, `content`, `images`, `tags` |
-| `list_drafts` | 列出所有本地草稿 | 无 |
-| `get_draft` | 获取指定草稿详情 | `draft_id` |
-| `delete_draft` | 删除本地草稿 | `draft_id` |
-| `publish_from_draft` | 从本地草稿发布到小红书 | `draft_id` |
+| `save_to_draft` | 保存图文内容到草稿箱 | `title`, `content`, `images`, `tags` |
 | `list_feeds` | 获取首页 Feeds 列表 | 无 |
 | `search_feeds` | 搜索内容 | `keyword`, `filters` |
 | `get_feed_detail` | 获取笔记详情 | `feed_id`, `xsec_token` |
